@@ -41,10 +41,15 @@ Para el desarrollo del prototipo se requerirán los siguientes componentes princ
   - **Microcontrolador:** Módulo **ESP32-WROOM-32E**, el cual está construido sobre la serie de SoC ESP32 e integra un microprocesador **Xtensa dual-core 32-bit LX6**. Opera a 240MHz y cuenta con 520KB de SRAM y 8MB de FLASH, recursos ideales para ejecutar *TinyML* localmente.  
   - **Conectividad Inalámbrica:** Soporte de red nativo mediante los protocolos **WIFI 802.11b/g/n** y **Bluetooth V4.2 BR/EDR y Bluetooth LE** integrados en el chip.  
   - **Controladores de Motores:** La placa incorpora internamente **Dual H-Bridges for motor control** (puentes H duales) con capacidad de entregar hasta 800mA por cada motor.  
-- **Sistema de Movimiento:** Kit **Basic 2WD Chassis with Motors**. Provee la plataforma física completa cuyas piezas oficiales incluyen:  
-  - Estructura: **Acrylic Car Chassis Boards** (placas acrílicas) y tornillería.  
-  - Tracción principal: **2 x Gear Motor** (motores de engranajes) acoplados a **2 x Robot Plastic Tire Wheel** (llantas de plástico con goma).  
-  - Apoyo direccional: **1 x Caster wheel** (rueda loca).  
+- **Sistema de Movimiento:** Plataforma física completa del robot. Se contempla el uso de cualquiera de las siguientes dos opciones de kit (ambas configuradas para funcionar con tracción trasera usando 2 motores):
+  - **Opción A:** Kit **Basic 2WD Chassis with Motors**. Sus piezas incluyen:
+    - Estructura: **Acrylic Car Chassis Boards** (placas acrílicas) y tornillería.
+    - Tracción principal: **2 x Gear Motor** (motores de engranajes) acoplados a **2 x Robot Plastic Tire Wheel** (llantas de plástico con goma).
+    - Apoyo direccional: **1 x Caster wheel** (rueda loca).
+  - **Opción B:** Kit **[4WD Smart Robot Car Chassis Kits with Speed Encoder](https://www.crcibernetica.com/4wd-smart-robot-car-chassis-kits-with-speed-encoder/)**. Chasis de 4 ruedas adaptado para operar con tracción trasera. Sus piezas incluyen:
+    - Estructura: Placas acrílicas (doble nivel) y tornillería.
+    - Tracción principal: **2 x Gear Motor** (motores de engranajes) acoplados a llantas de plástico en la parte trasera.
+    - Apoyo direccional: **2 x Ruedas delanteras libres** (instaladas sin motores conectados para proveer estabilidad).
 - **Sensores:** Elementos provistos en el kit del curso para alimentar el modelo de IA:  
   - **Detección de distancia (2 x HCSR04 Ultrasonic Sensor):** Son sensores ultrasónicos capaces de medir distancias de forma continua. Se utilizarán en pares: uno montado en la parte frontal y otro en la parte trasera del chasis. Su uso en el sistema es proveer la distancia exacta a la que se encuentran los objetos en ambos frentes, permitiendo al robot identificar a tiempo la presencia de obstáculos tanto al avanzar como al retroceder..  
   - **Medición inercial (1 x Adafruit LSM6DS3TR-C IMU 6-DoF):** Es un módulo de percepción avanzado que funciona combinando un acelerómetro y un giroscopio de 3 ejes. Su uso en el sistema es monitorear los cambios en la aceleración lineal y registrar los giros o inclinaciones del chasis en el espacio 3D, proveyendo los datos de movimiento que el modelo de TinyML necesita para evaluar la conducción del usuario.  
@@ -77,6 +82,8 @@ Para el desarrollo, control y gestión del proyecto se implementarán las siguie
   - **UART** para la depuración por consola (*debug*) y comunicación asíncrona.  
   - **Modulación por Ancho de Pulsos (PWM)** para el control analógico preciso de la velocidad y dirección de los motores DC de las ruedas.  
 - **Entornos y Lenguajes de Programación:** Se evaluará el desarrollo del código de aplicación (*Application Code*) en **C/C++** mediante el Arduino IDE o PlatformIO debido a su eficiencia en la gestión de recursos de memoria  y su compatibilidad estándar con TinyML. De forma complementaria, se contempla el uso de **CircuitPython** para agilizar el prototipado y las pruebas de concepto iniciales.  
+- **Simulación de Hardware:**  
+  - **Wokwi:** Se utilizará este simulador de electrónica online para realizar pruebas virtuales y prototipado rápido de los circuitos, conexiones del microcontrolador ESP32 y la lógica de sensores y actuadores antes de interactuar con el hardware físico.  
 - **Gestión de Código y Calidad (Ingeniería de Software):**  
   - **Control de Versiones:** El ciclo de vida del software estará versionado en un repositorio de **GitHub**, utilizando un enfoque ágil mediante *releases* progresivos para cada fase del proyecto.  
   - **TDD**: el desarrollo del proyecto utilizará la metodología de desarrollo guiada por pruebas tanto en el hardware como en el software.  
@@ -211,16 +218,16 @@ flowchart TB
     %% Flujo Interno de Comunicación
     WirelessCtrl <--> CmdReceptor
     CmdReceptor <-->|Comandos de Usuario| CarCtrl
-    CarCtrl -->|Dispara Alerta Inalámbrica| RiskComm
 
     %% Flujo de Acción
     CarCtrl <-->|Órdenes de Tracción| MotorCtrl
-    CarCtrl -->|Dispara Alarma Física| SoundCtrl
+    RiskComm -->|Dispara Alarma Física| SoundCtrl
 
     %% Flujo de Percepción y Procesamiento
-    NavCtrl <-->|Datos de Aceleración y Giro| CarCtrl
-    ProxCtrl <-->|Datos de Distancia| CarCtrl
-    CarCtrl <-->|Lecturas Limpias / Predicción| TinyML
+    NavCtrl -->|Datos de Aceleración y Giro| TinyML
+    ProxCtrl -->|Datos de Distancia| TinyML
+    TinyML <-->|Predicción / Feedback| CarCtrl
+    TinyML -->|Alerta Inalámbrica / Disparo| RiskComm
 ```
 
 #### 5.2.2. Descripción y Tecnologías de los Módulos Lógicos
@@ -234,13 +241,13 @@ flowchart TB
   - *Tecnologías:* Librería de C++ **DabbleESP32**, encargada de parsear los paquetes de control enviados desde la app.
 - **Motor Controller:** Encapsula la lógica de tracción. Transforma las instrucciones de alto nivel (avanzar, retroceder, girar izquierda/derecha) en señales concretas para los motores.
   - *Tecnologías:* **PWM (Modulación por Ancho de Pulsos)** usando la API nativa de control de motores del ESP32 para gestionar los puentes H (*Dual H-Bridges*).
-- **Navigation Controller & Proximity Controller:** Módulos encargados de limpiar y procesar los datos crudos provenientes del sensor IMU y los sensores ultrasónicos respectivamente. Envían datos procesados al *Car Controller*.
+- **Navigation Controller & Proximity Controller:** Módulos encargados de limpiar y procesar los datos crudos provenientes del sensor IMU y los sensores ultrasónicos respectivamente. Envían datos procesados al *TinyML Controller*.
   - *Tecnologías:* **I2C o SPI** para la comunicación directa y fluida con la IMU (Adafruit), y lecturas de pines **GPIO** para calcular los ecos/rebotes de los sensores ultrasónicos.
-- **TinyML Controller:** El cerebro analítico. Recibe del *Car Controller* los datos procesados de navegación y proximidad, ejecuta el modelo de inferencia en tiempo real y devuelve recomendaciones (feedback) sobre posibles riesgos.
+- **TinyML Controller:** El cerebro analítico. Recibe del *Navigation Controller* y del *Proximity Controller* los datos procesados, ejecuta el modelo de inferencia en tiempo real, devuelve retroalimentación al *Car Controller* y comunica las alertas al *Risk Communicator*.
   - *Tecnologías:* Frameworks de Edge AI como **TensorFlow Lite for Microcontrollers**, **ExecuTorch** o **PyTorch Mobile**, ejecutando inferencia sobre modelos ligeros en memoria local.
-- **Sound Controller:** Se encarga de activar la alarma acústica (Buzzer) desde el hardware del robot cuando el *Car Controller* identifica que el umbral de riesgo ha sido superado.
+- **Sound Controller:** Se encarga de activar la alarma acústica (Buzzer) desde el hardware del robot cuando el *Risk Communicator* le indica que el umbral de riesgo ha sido superado.
   - *Tecnologías:* Manejo directo de pines digitales **GPIO** o **PWM** en C++ para generar tonos de alerta.
-- **Risk Communicator:** Un canal secundario de seguridad. Envía alertas de vuelta al *Command Transmitter* (interfaz del usuario) en caso de que la alarma auditiva local no sea percibida.
+- **Risk Communicator:** Gestor de notificaciones de seguridad. Recibe las alertas del *TinyML Controller* y dispara la alarma auditiva local a través del *Sound Controller*. Además, envía notificaciones de riesgo de vuelta al *Command Transmitter* (interfaz del usuario).
 
 ---
 
