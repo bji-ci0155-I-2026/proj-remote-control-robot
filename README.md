@@ -41,19 +41,14 @@ Para el desarrollo del prototipo se requerirán los siguientes componentes princ
   - **Microcontrolador:** Módulo **ESP32-WROOM-32E**, el cual está construido sobre la serie de SoC ESP32 e integra un microprocesador **Xtensa dual-core 32-bit LX6**. Opera a 240MHz y cuenta con 520KB de SRAM y 8MB de FLASH, recursos ideales para ejecutar *TinyML* localmente.  
   - **Conectividad Inalámbrica:** Soporte de red nativo mediante los protocolos **WIFI 802.11b/g/n** y **Bluetooth V4.2 BR/EDR y Bluetooth LE** integrados en el chip.  
   - **Controladores de Motores:** La placa incorpora internamente **Dual H-Bridges for motor control** (puentes H duales) con capacidad de entregar hasta 800mA por cada motor.  
-- **Sistema de Movimiento:** Plataforma física completa del robot. Se contempla el uso de cualquiera de las siguientes dos opciones de kit (ambas configuradas para funcionar con tracción trasera usando 2 motores):
-  - **Opción A:** Kit **Basic 2WD Chassis with Motors**. Sus piezas incluyen:
-    - Estructura: **Acrylic Car Chassis Boards** (placas acrílicas) y tornillería.
-    - Tracción principal: **2 x Gear Motor** (motores de engranajes) acoplados a **2 x Robot Plastic Tire Wheel** (llantas de plástico con goma).
-    - Apoyo direccional: **1 x Caster wheel** (rueda loca).
-  - **Opción B:** Kit **[4WD Smart Robot Car Chassis Kits with Speed Encoder](https://www.crcibernetica.com/4wd-smart-robot-car-chassis-kits-with-speed-encoder/)**. Chasis de 4 ruedas adaptado para operar con tracción trasera. Sus piezas incluyen:
-    - Estructura: Placas acrílicas (doble nivel) y tornillería.
-    - Tracción principal: **2 x Gear Motor** (motores de engranajes) acoplados a llantas de plástico en la parte trasera.
-    - Apoyo direccional: **2 x Ruedas delanteras libres** (instaladas sin motores conectados para proveer estabilidad).
+- **Sistema de Movimiento:** Plataforma física completa del robot. Se utilizará el kit **4WD Smart Robot Car Chassis** disponible en el laboratorio del curso, configurado para operar con tracción en 2 ruedas traseras (2WD efectivo), dejando las 2 ruedas delanteras libres como soporte direccional. Sus componentes incluyen:
+  - Estructura: Placas acrílicas de doble nivel con tornillería de montaje.
+  - Tracción principal: **2 x Gear Motor** (motores de engranajes) acoplados a llantas en la parte trasera, controlados directamente por los **Dual H-Bridges** integrados en el IdeaBoard.
+  - Apoyo direccional: **2 x ruedas delanteras libres** instaladas sin motores conectados para proveer estabilidad al chasis.
 - **Sensores:** Elementos provistos en el kit del curso para alimentar el modelo de IA:  
-  - **Detección de distancia (2 x HCSR04 Ultrasonic Sensor):** Son sensores ultrasónicos capaces de medir distancias de forma continua. Se utilizarán en pares: uno montado en la parte frontal y otro en la parte trasera del chasis. Su uso en el sistema es proveer la distancia exacta a la que se encuentran los objetos en ambos frentes, permitiendo al robot identificar a tiempo la presencia de obstáculos tanto al avanzar como al retroceder..  
+  - **Detección de distancia (2 x HCSR04 Ultrasonic Sensor):** Son sensores ultrasónicos capaces de medir distancias de forma continua mediante el reflejo de pulsos de sonido. Operan exclusivamente a través de pines **GPIO digitales**: un pin de salida (**TRIG**) recibe un pulso de 10 µs para disparar la ráfaga ultrasónica, y un pin de entrada (**ECHO**) permanece en HIGH durante el tiempo que tarda el sonido en rebotar contra el obstáculo y regresar. La distancia se calcula midiendo la duración de ese pulso con un temporizador. Se utilizarán en pares: uno montado en la parte frontal y otro en la parte trasera del chasis, consumiendo un total de 4 pines GPIO del IdeaBoard (TRIG_F, ECHO_F, TRIG_R, ECHO_R).
   - **Medición inercial (1 x Adafruit LSM6DS3TR-C IMU 6-DoF):** Es un módulo de percepción avanzado que funciona combinando un acelerómetro y un giroscopio de 3 ejes. Su uso en el sistema es monitorear los cambios en la aceleración lineal y registrar los giros o inclinaciones del chasis en el espacio 3D, proveyendo los datos de movimiento que el modelo de TinyML necesita para evaluar la conducción del usuario.  
-  - **Conexión I2C (1 x Cable STEMMA QT / Qwiic):** Cable de interconexión rápida de 4 hilos. Su uso es enlazar directamente el puerto Qwiic de la placa Ideaboard con el conector Qwiic del sensor IMU, transportando de forma simultánea la alimentación de energía y los datos del bus I2C sin necesidad de soldaduras  
+  - **Conexión I2C (1 x Cable STEMMA QT / Qwiic):** Cable de interconexión rápida de 4 hilos. Su uso es enlazar exclusivamente el puerto Qwiic de la placa Ideaboard con el conector Qwiic del sensor IMU, transportando de forma simultánea la alimentación de energía y los datos del bus I2C sin necesidad de soldaduras.
 - **Actuadores de Alerta:**  
   - Alarma Acústica: **1 x Buzzer** para emitir advertencias acústicas recomendadas por la IA ante riesgo de colisión.  
 - **Alimentación:**  
@@ -82,8 +77,8 @@ Para el desarrollo, control y gestión del proyecto se implementarán las siguie
   - **UART** para la depuración por consola (*debug*) y comunicación asíncrona.  
   - **Modulación por Ancho de Pulsos (PWM)** para el control analógico preciso de la velocidad y dirección de los motores DC de las ruedas.  
 - **Entornos y Lenguajes de Programación:** Se evaluará el desarrollo del código de aplicación (*Application Code*) en **C/C++** mediante el Arduino IDE o PlatformIO debido a su eficiencia en la gestión de recursos de memoria  y su compatibilidad estándar con TinyML. De forma complementaria, se contempla el uso de **CircuitPython** para agilizar el prototipado y las pruebas de concepto iniciales.  
-- **Simulación de Hardware:**  
-  - **Wokwi:** Se utilizará este simulador de electrónica online para realizar pruebas virtuales y prototipado rápido de los circuitos, conexiones del microcontrolador ESP32 y la lógica de sensores y actuadores antes de interactuar con el hardware físico.  
+- **Simulación de Hardware:**
+  - **Wokwi:** Se utilizará este simulador de electrónica online para realizar pruebas virtuales y prototipado rápido de los circuitos, conexiones del microcontrolador ESP32 y la lógica de sensores y actuadores antes de interactuar con el hardware físico. Wokwi fue seleccionado sobre SimulIDE por recomendación del profesor del curso, y porque ofrece soporte nativo para el microcontrolador ESP32 (incluyendo sus capacidades Wi-Fi y Bluetooth), el cual no es compatible con SimulIDE. Wokwi también incluye modelos simulados del HC-SR04, servomotores y otros componentes utilizados en el proyecto, lo que permite validar la lógica del sistema de forma más fiel al hardware real.
 - **Gestión de Código y Calidad (Ingeniería de Software):**  
   - **Control de Versiones:** El ciclo de vida del software estará versionado en un repositorio de **GitHub**, utilizando un enfoque ágil mediante *releases* progresivos para cada fase del proyecto.  
   - **TDD**: el desarrollo del proyecto utilizará la metodología de desarrollo guiada por pruebas tanto en el hardware como en el software.  
@@ -242,7 +237,7 @@ flowchart TB
 - **Motor Controller:** Encapsula la lógica de tracción. Transforma las instrucciones de alto nivel (avanzar, retroceder, girar izquierda/derecha) en señales concretas para los motores.
   - *Tecnologías:* **PWM (Modulación por Ancho de Pulsos)** usando la API nativa de control de motores del ESP32 para gestionar los puentes H (*Dual H-Bridges*).
 - **Navigation Controller & Proximity Controller:** Módulos encargados de limpiar y procesar los datos crudos provenientes del sensor IMU y los sensores ultrasónicos respectivamente. Envían datos procesados al *TinyML Controller*.
-  - *Tecnologías:* **I2C o SPI** para la comunicación directa y fluida con la IMU (Adafruit), y lecturas de pines **GPIO** para calcular los ecos/rebotes de los sensores ultrasónicos.
+  - *Tecnologías:* **I2C** a través del conector STEMMA QT / Qwiic para la comunicación directa con la IMU (Adafruit LSM6DS3). Para los sensores ultrasónicos HC-SR04, se utilizan pines **GPIO digitales** directamente: la señal TRIG se envía como salida digital y la duración del pulso ECHO se mide mediante temporizador para calcular la distancia al obstáculo.
 - **TinyML Controller:** El cerebro analítico. Recibe del *Navigation Controller* y del *Proximity Controller* los datos procesados, ejecuta el modelo de inferencia en tiempo real, devuelve retroalimentación al *Car Controller* y comunica las alertas al *Risk Communicator*.
   - *Tecnologías:* Frameworks de Edge AI como **TensorFlow Lite for Microcontrollers**, **ExecuTorch** o **PyTorch Mobile**, ejecutando inferencia sobre modelos ligeros en memoria local.
 - **Sound Controller:** Se encarga de activar la alarma acústica (Buzzer) desde el hardware del robot cuando el *Risk Communicator* le indica que el umbral de riesgo ha sido superado.
