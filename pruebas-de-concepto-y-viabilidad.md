@@ -107,7 +107,6 @@ Como parte del rediseño para superar la incompatibilidad de Dabble en CircuitPy
 - **Adafruit Bluefruit LE Connect:** Uso de la librería oficial `adafruit_ble` para levantar un servicio UART por BLE.
 - **dabble-circuitpython:** Adaptación de la librería de Dabble desarrollada por la comunidad (Eric Zundel).
 - **Bluepad32 para CircuitPython:** Port para vincular gamepads y mandos físicos inalámbricos directamente al microcontrolador.
-- **Módulos Externos (HM-10 / HC-05):** Conectados vía UART física como puente de comunicación para evadir la limitación de la librería nativa `_bleio` en el módulo ESP32 clásico (ESP32-WROOM-32E).
 
 **Arduino IDE (C++):**
 
