@@ -15,12 +15,12 @@ Universidad de Costa Rica - Sistemas Empotrados de Tiempo Real - CI-0155
 
 El desarrollo y planeamiento del robot móvil se encuentra organizado en las siguientes secciones detalladas:
 
-1. 📄 **[Propuesta Inicial (Teórica)](./propuesta-inicial.md):** Contiene el planeamiento teórico original del sistema empotrado, incluyendo la estimación de componentes, tecnologías y diagramas de arquitectura de hardware y software planteados al inicio del proyecto.
-2. 📄 **[Pruebas de Concepto y Viabilidad (Prototipo Real)](./pruebas-de-concepto-y-viabilidad.md):** Contiene la documentación técnica del prototipo físico final, detallando los componentes realmente utilizados y descartados, los resultados de las pruebas experimentales y los cambios de ingeniería aplicados para asegurar la viabilidad.
+- **[Propuesta Inicial (Teórica)](./propuesta-inicial.md):** Contiene el planeamiento teórico original del sistema empotrado, incluyendo la estimación de componentes, tecnologías y diagramas de arquitectura de hardware y software planteados al inicio del proyecto.
+- **[Pruebas de Concepto y Viabilidad (Prototipo Real)](./pruebas-de-concepto-y-viabilidad.md):** Contiene la documentación técnica del prototipo físico final, detallando los componentes realmente utilizados y descartados, los resultados de las pruebas experimentales y los cambios de ingeniería aplicados para asegurar la viabilidad.
 
 ---
 
-## 1. Descripción del sistema empotrado
+## Descripción del sistema empotrado
 
 El proyecto consiste en el diseño y desarrollo de un prototipo de robot móvil de dos ruedas adaptado para superficies planas, enfocado en la conducción asistida. El desarrollo se dividirá en dos etapas iterativas:
 
@@ -29,7 +29,7 @@ El proyecto consiste en el diseño y desarrollo de un prototipo de robot móvil 
 
 ---
 
-## 2. Público meta
+## Público meta
 
 **Público meta principal**
 

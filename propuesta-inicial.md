@@ -6,7 +6,7 @@ Este documento contiene la propuesta teórica inicial para el diseño y planeami
 
 ---
 
-## 3. Posibles componentes a utilizar
+## Posibles componentes a utilizar
 
 Para el desarrollo del prototipo se requerirán los siguientes componentes principales de hardware, desglosados con sus respectivos subcomponentes:
 
@@ -42,7 +42,7 @@ Aprovechando la disponibilidad del kit de la clase, se contemplan estas piezas o
 
 ---
 
-## 4. Posibles tecnologías a utilizar
+## Posibles tecnologías a utilizar
 
 Para el desarrollo, control y gestión del proyecto se implementarán las siguientes tecnologías, protocolos y buenas prácticas:
 
@@ -66,15 +66,15 @@ Para el desarrollo, control y gestión del proyecto se implementarán las siguie
 
 ---
 
-## 5. Arquitectura del Sistema
+## Arquitectura del Sistema
 
 La arquitectura del proyecto se divide conceptualmente en dos capas principales: **Hardware** y **Software**. A continuación, se detallan los componentes, sus responsabilidades y las interacciones entre ellos.
 
-### 5.1. Arquitectura de Hardware
+### Arquitectura de Hardware
 
 El hardware está estructurado alrededor del microcontrolador principal (ESP32), el cual actúa como el cerebro del sistema. Éste se encarga de la comunicación externa, el control de los actuadores y la lectura de los sensores.
 
-#### 5.1.1. Diagrama de Conexiones Físicas
+#### Diagrama de Conexiones Físicas
 
 ```mermaid
 flowchart TB
@@ -133,7 +133,7 @@ flowchart TB
     Battery -.->|Alimentación Directa| MotorR
 ```
 
-#### 5.1.2. Descripción de Componentes Físicos
+#### Descripción de Componentes Físicos
 
 - **Microcontrolador ESP32:** Es el núcleo del sistema. Se comunica con los *H-Bridge Drivers* mediante señales PWM para controlar la tracción (adelante, atrás, izquierda, derecha) de los motores, conectados a los pines del IdeaBoard.
 - **Módulo de Comunicación (Wi-Fi/Bluetooth):** Adaptador integrado en el ESP32 que recibe las conexiones entrantes desde el teléfono móvil u otros dispositivos externos.
@@ -143,11 +143,11 @@ flowchart TB
 
 ---
 
-### 5.2. Arquitectura de Software
+### Arquitectura de Software
 
 La estructura del software sigue un enfoque modular, en el que un controlador central orquesta el flujo de información entre la lectura de datos, el análisis inteligente y la ejecución de comandos.
 
-#### 5.2.1. Diagrama de Componentes Lógicos
+#### Diagrama de Componentes Lógicos
 
 ```mermaid
 flowchart TB
@@ -204,7 +204,7 @@ flowchart TB
     TinyML -->|Alerta Inalámbrica / Disparo| RiskComm
 ```
 
-#### 5.2.2. Descripción y Tecnologías de los Módulos Lógicos
+#### Descripción y Tecnologías de los Módulos Lógicos
 
 - **Car Controller:** Es el módulo orquestador y corazón del sistema. Su labor principal es sincronizar la información y los eventos entre todos los módulos auxiliares.
 - **Command Transmitter:** Aplicación cliente (en el celular del usuario) responsable de emitir las peticiones de movimiento.
@@ -225,7 +225,7 @@ flowchart TB
 
 ---
 
-### 5.3. Mapeo entre Módulos Lógicos y Componentes Físicos
+### Mapeo entre Módulos Lógicos y Componentes Físicos
 
 Para comprender cómo el software interactúa con el mundo físico, la siguiente tabla mapea qué componente de hardware específico es operado, controlado o leído por cada módulo de software:
 

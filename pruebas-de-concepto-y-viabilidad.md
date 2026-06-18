@@ -4,7 +4,7 @@
 
 ---
 
-## 3. Componentes del prototipo (Utilizados y Descartados)
+## Componentes del prototipo (Utilizados y Descartados)
 
 Para la implementación del prototipo físico, se seleccionaron los componentes que demostraron viabilidad y rendimiento óptimo en la práctica. Asimismo, varios componentes del planeamiento inicial fueron descartados o modificados por razones técnicas y de estabilidad eléctrica:
 
@@ -34,7 +34,7 @@ Para la implementación del prototipo físico, se seleccionaron los componentes 
 
 ---
 
-## 4. Tecnologías y Frameworks Aplicados
+## Tecnologías y Frameworks Aplicados
 
 Para el desarrollo del prototipo de robot móvil asistido se aplicaron las siguientes tecnologías:
 
@@ -52,9 +52,9 @@ Para el desarrollo del prototipo de robot móvil asistido se aplicaron las sigui
 
 ---
 
-## 5. Pruebas de concepto del sistema empotrado
+## Pruebas de concepto del sistema empotrado
 
-### 5.1. Descripción de las pruebas de concepto
+### Descripción de las pruebas de concepto
 
 Para garantizar la viabilidad del robot móvil teleoperado y asistido, se definieron e implementaron cuatro pruebas de concepto esenciales:
 
@@ -69,9 +69,9 @@ Para garantizar la viabilidad del robot móvil teleoperado y asistido, se defini
 
 ---
 
-### 5.2. Implementación de pruebas
+### Implementación de pruebas
 
-#### 5.2.1. Software de Simulación (Wokwi)
+#### Software de Simulación (Wokwi)
 
 Antes de integrar el hardware físico, se implementó un circuito virtual en el simulador online **Wokwi** para validar la lógica del código y el mapeo de pines del ESP32. 
 
@@ -88,7 +88,7 @@ Se diseñó un bucle principal no bloqueante utilizando temporizadores virtuales
 
 Esta prueba digital demostró la viabilidad de la lógica de evasión y aseguró que no existieran conflictos de asignación de pines GPIO antes del montaje físico.
 
-#### 5.2.2. Componentes Seleccionados (Montaje Físico)
+#### Componentes Seleccionados (Montaje Físico)
 
 Para la implementación física del prototipo, se ensamblaron los componentes en el chasis del robot siguiendo el siguiente mapeo y estructura de hardware:
 
@@ -105,7 +105,7 @@ Para la implementación física del prototipo, se ensamblaron los componentes en
 
 ---
 
-### 5.3. Resultados de las pruebas
+### Resultados de las pruebas
 
 Las pruebas de concepto arrojaron los siguientes resultados de rendimiento sobre el prototipo:
 
@@ -118,7 +118,7 @@ Las pruebas de concepto arrojaron los siguientes resultados de rendimiento sobre
 
 ---
 
-### 5.4. Cambios al sistema empotrado propuesto
+### Cambios al sistema empotrado propuesto
 
 A partir de los resultados experimentales y las pruebas de concepto, se realizaron modificaciones clave sobre la propuesta teórica original para asegurar la viabilidad del prototipo funcional:
 
