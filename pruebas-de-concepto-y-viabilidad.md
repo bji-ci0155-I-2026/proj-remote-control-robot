@@ -104,7 +104,7 @@ Con base en la experimentación directa sobre el prototipo físico, se aplican l
    - Confirmación del uso del rodillo auxiliar delantero (rueda sin tracción) en lugar de una dirección rígida o tracción delantera, debido a su mayor facilidad de construcción.
    - Reemplazo futuro de los soportes estructurales de cartón del sensor/servo por piezas definitivas de plástico rígido o impresión 3D para mayor estabilidad.
 3. **Autonomía y Uso de Fuente de Poder (Mini PSU):**
-   - Se implementó el uso de la batería de 9V con clip junto con el módulo de fuente de poder (mini PSU) para alimentar la placa de control IdeaBoard y los motores de forma segura y regulada. Esto otorga autonomía energética al robot, eliminando la necesidad de cables a computadoras u tomas fijas.
+   - Se implementó el uso de la batería de 9V con clip junto con el módulo de fuente de poder (mini PSU) para alimentar la placa de control IdeaBoard y los motores de forma segura.
 
 ### Opciones de Control Remoto y Bluetooth en Evaluación
 
