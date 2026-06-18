@@ -1,5 +1,7 @@
 # Pruebas de Concepto y Viabilidad (Prototipo Real)
 
+[◀ Volver al Índice Principal](./README.md)
+
 ---
 
 ## 3. Componentes del prototipo (Utilizados y Descartados)
@@ -132,3 +134,6 @@ A partir de los resultados experimentales y las pruebas de concepto, se realizar
 4. **Configuración del Chasis 2WD Efectivo:**
    - *Propuesta Original:* Chasis 4WD adaptado a 2WD trasero con 2 ruedas delanteras libres acopladas sin motores.
    - *Cambio Aplicado:* Se confirmó la estabilidad del chasis de dos motores traseros y rueda loca delantera, ofreciendo giros de radio cero muy eficientes en entornos planos e interiores, óptimo para pruebas académicas en laboratorios.
+
+---
+[◀ Volver al Índice Principal](./README.md)

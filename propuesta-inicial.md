@@ -1,5 +1,7 @@
 # Propuesta Inicial de Sistema Empotrado
 
+[◀ Volver al Índice Principal](./README.md)
+
 Este documento contiene la propuesta teórica inicial para el diseño y planeamiento del robot móvil controlado a distancia.
 
 ---
@@ -238,3 +240,6 @@ Para comprender cómo el software interactúa con el mundo físico, la siguiente
 | **TinyML Controller** | Microcontrolador ESP32 | Cómputo de la red neuronal sobre los núcleos Xtensa del microcontrolador. |
 | **Sound Controller** | Buzzer | Conversión de señal digital a alerta sonora física. |
 | **Risk Communicator** | Driver Wi-Fi / Bluetooth (ESP32) | Transmisión de notificaciones de riesgo de vuelta al celular. |
+
+---
+[◀ Volver al Índice Principal](./README.md)
