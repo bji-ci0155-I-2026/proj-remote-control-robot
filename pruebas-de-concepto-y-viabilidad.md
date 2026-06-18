@@ -44,10 +44,10 @@ Para la construcción y validación del prototipo físico del robot móvil, se u
 
 El equipo llevó a cabo cuatro pruebas de concepto físicas para verificar la viabilidad mecánica y electrónica del robot:
 
-1. **Prueba de Tracción y Movimiento Básico (Adelante/Atrás/Giro):** Validación de que los motores DC responden en sentido y velocidad al puente H, y que el chasis de tracción trasera con rueda loca delantera gira con fluidez sobre su eje.
-2. **Prueba de Enlace Dabble y Control Inalámbrico (Fallida):** Validación del intento de vinculación y control del robot en tiempo real desde la aplicación de Gamepad virtual Dabble utilizando firmware basado en CircuitPython.
-3. **Prueba Unitaria de Servo y Sensor Ultrasónico (En Casa):** Validación en laboratorio doméstico del acople del microservo con el sensor ultrasónico HC-SR04 sobre soporte de cartón, comprobando que el sensor rota físicamente de izquierda a derecha simulando un barrido de escaneo.
-4. **Prueba de Aislamiento y Soporte Estructural (Cartón):** Validación de que el montaje con piezas de cartón provisionales separa de forma segura la placa IdeaBoard del módulo de fuente de poder (mini PSU) y sus conexiones eléctricas para evitar fallas o cortocircuitos.
+1. **Prueba de Tracción y Movimiento Básico:** Validación de que los motores DC responden en sentido y velocidad al puente H, y que el chasis de tracción trasera con rueda loca delantera gira con fluidez sobre su eje.
+2. **Prueba de Enlace Dabble y Control Inalámbrico:** Validación del intento de vinculación y control del robot en tiempo real desde la aplicación de Gamepad virtual Dabble utilizando firmware basado en CircuitPython.
+3. **Prueba Unitaria de Servo y Sensor Ultrasónico:** Validación en laboratorio doméstico del acople del microservo con el sensor ultrasónico HC-SR04 sobre soporte de cartón, comprobando que el sensor rota físicamente de izquierda a derecha simulando un barrido de escaneo.
+4. **Prueba de Aislamiento y Soporte Estructural:** Validación de que el montaje con piezas de cartón provisionales separa de forma segura la placa IdeaBoard del módulo de fuente de poder (mini PSU) y sus conexiones eléctricas para evitar fallas o cortocircuitos.
 
 ### Implementación de pruebas
 
