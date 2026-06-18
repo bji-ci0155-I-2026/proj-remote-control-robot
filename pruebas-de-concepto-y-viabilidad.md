@@ -21,19 +21,19 @@ Para la construcción y validación del prototipo físico del robot móvil, se u
 
 ### Componentes Descartados y Razón del Descarte
 
-- **Sensor IMU (Adafruit LSM6DS3TR-C) e Interfaz I2C:** Se descartó temporalmente en la implementación física para reducir la sobrecarga de lectura en el microcontrolador y simplificar la lógica de control primaria enfocada en el enlace inalámbrico y la tracción.
-- **Algoritmo / Inferencia TinyML:** Descartado en esta etapa debido a restricciones de memoria SRAM y a que las lecturas y la lógica de evasión primaria pueden resolverse eficientemente mediante reglas de umbral directo, sin el costo computacional de inferencia local.
+- **Sensor IMU (Adafruit LSM6DS3TR-C) e Interfaz I2C:** Se descartó temporalmente para simplificar la lógica de control primaria enfocada en el enlace inalámbrico y la tracción.
+- **Algoritmo / Inferencia TinyML:** Descartado en esta etapa debido a tiempo de la entrega..
 - **Buzzer Activo/Pasivo:** No se montó en las pruebas del prototipo actual para mantener el hardware básico y enfocar el consumo de corriente únicamente en la tracción y servocontrol.
-- **Alimentación Unificada (4xAA compartido):** La propuesta original de alimentar la placa ESP32 y los motores con un único portabaterías de 4xAA falló en las pruebas preliminares de corriente. Se identificó la necesidad de separar las fuentes (compra de una batería cuadrada para la electrónica y baterías AA para potencia) para prevenir el bloqueo del ESP32 por caídas de tensión (*brownout*).
+- **Alimentación Unificada (4xAA compartido):** La propuesta original de alimentar la placa ESP32 y los motores con un único portabaterías de 4xAA falló en las pruebas preliminares de corriente. Se identificó la necesidad de separar las fuentes (compra de una batería cuadrada para la electrónica y baterías AA para potencia) para prevenir el bloqueo del ESP32 por caídas de tensión.
 
 ---
 
 ## Tecnologías y Frameworks Aplicados
 
-- **Plataforma de Desarrollo de Código:** Se utilizó el software **IdeaCode** y el lenguaje **CircuitPython (Python)** para el firmware inicial del robot, buscando agilizar el prototipado y la lectura directa de los periféricos locales como el servo y el sensor ultrasónico.
-- **Entorno de Programación y C++:** Se empleó **Arduino IDE con C++** para compilar y probar la compatibilidad de la pila inalámbrica. Los códigos fuentes resultantes se guardaron en la carpeta [code](./code), destacando [code/dabble.ino](./code/dabble.ino) (prueba serial del receptor inalámbrico) y [code/mapped.ino](./code/mapped.ino) (control PWM completo del carro teleoperado).
-- **Protocolo de Control Inalámbrico (Fallo de Compatibilidad):** Se intentó emplear la aplicación móvil **Dabble** y su protocolo Bluetooth Serial. No obstante, se determinó que **Dabble no es compatible con CircuitPython** bajo la placa IdeaBoard de manera directa, ya que sus bibliotecas principales (`DabbleESP32`) están construidas y optimizadas exclusivamente en C++ para Arduino IDE (por lo cual se crearon las pruebas en `.ino`).
-- **Control PWM de Motores:** Regulación analógica de la velocidad y giros del carrito a través del circuito de control integrado en la IdeaBoard.
+- **Plataforma de Desarrollo de Código y Lenguaje (Pruebas Realizadas):** Se utilizó el **Arduino IDE** y el lenguaje **C++** para compilar, cargar y ejecutar las pruebas físicas actuales del prototipo. Los códigos fuente desarrollados se guardaron en la carpeta [code](./code), destacando [code/dabble.ino](./code/dabble.ino) (prueba serial de recepción del control inalámbrico) y [code/mapped.ino](./code/mapped.ino) (control PWM completo y mapeo de tracción del robot).
+- **Entorno Evaluado (IdeaCode y CircuitPython):** Se probó y evaluó el entorno **IdeaCode** (IDE propietario de la placa IdeaBoard) utilizando **CircuitPython**. Aunque se desea utilizar este entorno para el firmware final, se identificaron limitaciones de compatibilidad inicial para comunicar la librería estándar de Dabble vía Bluetooth Classic, por lo cual las pruebas funcionales actuales se realizaron bajo C++ (`.ino`).
+- **Protocolo de Control Inalámbrico:** Se utilizó la aplicación móvil **Dabble** (módulo Gamepad) mediante Bluetooth Classic para la teleoperación del robot car, procesada a través de la librería `DabbleESP32` en el código de C++ (`.ino`).
+- **Control PWM de Motores:** Regulación analógica de la velocidad y giros de las ruedas a través del circuito de control integrado en la IdeaBoard.
 
 ---
 
@@ -55,7 +55,7 @@ El equipo llevó a cabo tres pruebas de concepto físicas para verificar la viab
 
 #### Componentes Seleccionados (Montaje Físico)
 
-- Se armó el chasis de acrílico acoplando los 2 motores de engranajes en el eje trasero.
+- Se armó el chasis de acrílico acoplando los 2 motores en el eje trasero.
 - Se instaló la rueda loca frontal ("rodillo") atornillada al chasis.
 - La placa IdeaBoard se alimentó y conectó a los motores a través de las bornas de potencia de los puentes H.
 - El microservo se cableó a la placa de desarrollo para alimentarlo con 5V y controlar su ángulo vía PWM. El sensor HC-SR04 se montó sobre el servo mediante piezas de cartón hechas a mano y se conectó a pines GPIO del ESP32.
@@ -68,16 +68,20 @@ El equipo llevó a cabo tres pruebas de concepto físicas para verificar la viab
 Las pruebas realizadas arrojaron los siguientes resultados y evidencias:
 
 #### Prueba de Tracción y Movimiento Básico
+
 - **Resultado:** **Exitoso**. Los motores DC tienen fuerza suficiente para desplazar el chasis sobre superficies planas. El rodillo auxiliar delantero permitió que el robot cambiara de dirección de manera suave y diera vueltas con un radio de giro óptimo.
 - **Evidencia en Video:**  
-  ![Test de Movimiento Adelante/Atrás](D:/SomeCode/sistemas-empotrados/proj-remote-control-robot/media/test-funcional-carrito-adelante-atras.mp4)
+  [Test de Movimiento Adelante/Atrás](./media/test-funcional-carrito-adelante-atras.mp4)
 
 #### Prueba de Enlace Dabble y Control Inalámbrico
+
 - **Resultado:** **Fallido**. Se comprobó la incompatibilidad entre la app Dabble y el entorno CircuitPython del IdeaBoard. El enlace no pudo establecerse debido a la falta de drivers de Dabble adaptados a Python en el microcontrolador.
+
 - **Evidencia en Video:**  
-  ![Prueba de Control Remoto con Dabble Fallido](D:/SomeCode/sistemas-empotrados/proj-remote-control-robot/media/test-funcional-dabble-control-remoto-fallido.mp4)
+  [Prueba de Control Remoto con Dabble Fallido](./media/test-funcional-dabble-control-remoto-fallido.mp4)
 
 #### Prueba de Servo y Sensor Ultrasónico
+
 - **Resultado:** **Exitoso**. La prueba realizada por el equipo de forma independiente validó la respuesta del servomotor a las señales PWM de control, barriendo un rango angular completo de izquierda a derecha. El sensor ultrasónico HC-SR04 capturó distancias a objetos correctamente durante el giro mecánico sobre el soporte de cartón.
 
 ---
@@ -86,15 +90,13 @@ Las pruebas realizadas arrojaron los siguientes resultados y evidencias:
 
 Con base en la experimentación directa sobre el prototipo físico, se aplican los siguientes cambios de diseño y planificación:
 
-1. **Reevaluación del Lenguaje y Protocolo de Control:**
-   - Para resolver el fallo de conectividad inalámbrica, el equipo evalúa dos alternativas técnicas antes de la entrega final:
-     - *Opción A:* Migrar todo el firmware del robot de **CircuitPython a C++** utilizando Arduino IDE o PlatformIO, lo cual habilitará la librería nativa `DabbleESP32` y solucionará inmediatamente el enlace inalámbrico por Bluetooth.
-     - *Opción B:* Continuar el desarrollo en CircuitPython e investigar o desarrollar una aplicación de control remoto genérica (tipo terminal de Bluetooth Serial) que sea compatible con librerías nativas de Python.
+1. **Migración Futura a IdeaCode y CircuitPython:**
+   - Aunque las pruebas funcionales de teleoperación actuales se resolvieron en C++ (`.ino`) a través del Arduino IDE por la compatibilidad directa de la librería de Dabble, el equipo planea a futuro migrar todo el desarrollo del robot a **IdeaCode y CircuitPython** para aprovechar el entorno de programación propietario de la IdeaBoard. Para lograr esto, se investigará y evaluará el uso de una aplicación de control inalámbrico alternativa o el desarrollo de un módulo de comunicación personalizado que funcione nativamente con CircuitPython en el ESP32.
 2. **Rediseño Físico de Soporte y Dirección:**
-   - Confirmación del uso del rodillo auxiliar delantero (rueda loca) en lugar de una dirección rígida o tracción delantera, debido a su mayor soltura en giros cerrados.
+   - Confirmación del uso del rodillo auxiliar delantero (rueda sin tracción) en lugar de una dirección rígida o tracción delantera, debido a su mayor facilidad de construcción.
    - Reemplazo futuro de los soportes estructurales de cartón del sensor/servo por piezas definitivas de plástico rígido o impresión 3D para mayor estabilidad.
 3. **Modificación del Esquema de Alimentación:**
-   - Implementar de forma definitiva un esquema de **fuentes de alimentación independientes**: se requiere comprar una batería cuadrada (9V) para alimentar de manera aislada la lógica del ESP32, manteniendo el portabaterías AA exclusivamente para proveer corriente a los motores DC y prevenir caídas de voltaje de control (*brownouts*).
+   - Implementar de forma definitiva un esquema de **fuentes de alimentación independientes**: se requiere comprar una batería cuadrada (9V) para alimentar de manera aislada la lógica del ESP32, manteniendo el portabaterías AA exclusivamente para proveer corriente a los motores DC y prevenir caídas de voltaje de control.
 
 ---
 [◀ Volver al Índice Principal](./README.md)
