@@ -98,5 +98,22 @@ Con base en la experimentación directa sobre el prototipo físico, se aplican l
 3. **Modificación del Esquema de Alimentación:**
    - Implementar de forma definitiva un esquema de **fuentes de alimentación independientes**: se requiere comprar una batería cuadrada (9V) para alimentar de manera aislada la lógica del ESP32, manteniendo el portabaterías AA exclusivamente para proveer corriente a los motores DC y prevenir caídas de voltaje de control.
 
+### Opciones de Control Remoto y Bluetooth en Evaluación
+
+Como parte del rediseño para superar la incompatibilidad de Dabble en CircuitPython y explorar mejores alternativas de control remoto, el equipo evalúa las siguientes opciones según el entorno de desarrollo definitivo:
+
+**CircuitPython:**
+
+- **Adafruit Bluefruit LE Connect:** Uso de la librería oficial `adafruit_ble` para levantar un servicio UART por BLE.
+- **dabble-circuitpython:** Adaptación de la librería de Dabble desarrollada por la comunidad (Eric Zundel).
+- **Bluepad32 para CircuitPython:** Port para vincular gamepads y mandos físicos inalámbricos directamente al microcontrolador.
+- **Módulos Externos (HM-10 / HC-05):** Conectados vía UART física como puente de comunicación para evadir la limitación de la librería nativa `_bleio` en el módulo ESP32 clásico (ESP32-WROOM-32E).
+
+**Arduino IDE (C++):**
+
+- **Blynk / Blynk IoT:** Plataforma móvil para crear interfaces gráficas personalizadas con botones y sliders de control.
+- **ESP32 BLE Gamepad:** Biblioteca para emular un mando inalámbrico estándar reconocido por cualquier dispositivo.
+- **Bluetooth Classic Serial:** Control serial simple a través de la librería nativa `BluetoothSerial.h` y aplicaciones de terminal de consola Bluetooth.
+
 ---
 [◀ Volver al Índice Principal](./README.md)
