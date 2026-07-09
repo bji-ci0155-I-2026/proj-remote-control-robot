@@ -40,6 +40,15 @@ const int ECHO_PIN = 34;   // entrada (34 es solo-entrada, ideal para un sensor)
 const int LED_PIN = 2;
 
 // =======================
+// Buzzer pasivo (bocina / HONK)
+// Modulo pasivo de 3 pines: S -> IO19, "-" -> GND, pin central sin conexion.
+// Al ser pasivo se genera el tono por PWM (ledcWriteTone).
+// =======================
+const int BUZZER_PIN = 19;
+const int HONK_FREQ_HZ = 440;          // tono tipo bocina
+const unsigned long HONK_DURATION_MS = 400;  // duracion de cada bocinazo
+
+// =======================
 // Velocidades
 // =======================
 int speedForward = 180;
@@ -76,6 +85,9 @@ long lastDistanceCm = 999;          // ultima medicion (999 = libre)
 unsigned long lastMeasureTime = 0;  // control de cadencia de medicion
 unsigned long lastCommandTime = 0;  // ultimo comando recibido (para el watchdog)
 
+bool honkActive = false;            // hay un bocinazo sonando
+unsigned long honkUntil = 0;        // millis() en que se apaga el buzzer
+
 void setup() {
   Serial.begin(115200);
   delay(1000);
@@ -99,6 +111,10 @@ void setup() {
   pinMode(LED_PIN, OUTPUT);
   digitalWrite(LED_PIN, LOW);
 
+  // Buzzer pasivo (bocina). Se usa PWM como con los motores.
+  ledcAttach(BUZZER_PIN, HONK_FREQ_HZ, 8);
+  ledcWriteTone(BUZZER_PIN, 0);  // silencio
+
   // Crear red WiFi propia
   bool apOk = WiFi.softAP(ssid, password);
   Serial.print("[DEBUG] WiFi.softAP() devolvio: ");
@@ -113,6 +129,7 @@ void setup() {
   server.on("/left", handleLeft);
   server.on("/right", handleRight);
   server.on("/stop", handleStop);
+  server.on("/honk", handleHonk);       // suena la bocina
   server.on("/status", handleStatus);   // devuelve la distancia para la UI
 
   server.begin();
@@ -125,6 +142,7 @@ void loop() {
   updateDistance();     // mide cada MEASURE_INTERVAL_MS
   applyMovement();      // aplica el comando respetando el freno de emergencia
   updateLed();          // enciende el LED si hay obstaculo cercano
+  updateHonk();         // apaga la bocina cuando termina el bocinazo
 }
 
 // =======================
@@ -207,6 +225,17 @@ void updateLed() {
 }
 
 // =======================
+// Bocina no bloqueante: handleHonk() la enciende, esto la apaga sola
+// al pasar HONK_DURATION_MS, sin frenar el manejo de comandos.
+// =======================
+void updateHonk() {
+  if (honkActive && millis() >= honkUntil) {
+    ledcWriteTone(BUZZER_PIN, 0);
+    honkActive = false;
+  }
+}
+
+// =======================
 // Pagina web
 // =======================
 void handleRoot() {
@@ -223,8 +252,8 @@ void handleRoot() {
       --panel: #1b2030;
       --btn: #2a3350;
       --btn-active: #3a4a7a;
-      --stop: #b00020;
-      --stop-active: #d81b3f;
+      --honk: #e8a400;
+      --honk-active: #ffbf1f;
       --text: #f2f4f8;
       --muted: #9aa4bd;
       --ok: #35c46b;
@@ -310,8 +339,8 @@ void handleRoot() {
     .button:active, .button.pressed { background: var(--btn-active); transform: scale(.96); }
     .up    { grid-column: 2; grid-row: 1; }
     .left  { grid-column: 1; grid-row: 2; }
-    .stop  { grid-column: 2; grid-row: 2; background: var(--stop); font-size: 22px; font-weight: 700; }
-    .stop:active, .stop.pressed { background: var(--stop-active); }
+    .honk  { grid-column: 2; grid-row: 2; background: var(--honk); color: #201500; font-size: 20px; font-weight: 800; letter-spacing: .5px; }
+    .honk:active, .honk.pressed { background: var(--honk-active); }
     .right { grid-column: 3; grid-row: 2; }
     .down  { grid-column: 2; grid-row: 3; }
 
@@ -332,7 +361,7 @@ void handleRoot() {
   <div class="pad">
     <button class="button up"    data-cmd="/forward">&uarr;</button>
     <button class="button left"  data-cmd="/left">&larr;</button>
-    <button class="button stop"  data-stop>STOP</button>
+    <button class="button honk"  data-honk>HONK</button>
     <button class="button right" data-cmd="/right">&rarr;</button>
     <button class="button down"  data-cmd="/backward">&darr;</button>
   </div>
@@ -388,18 +417,20 @@ void handleRoot() {
       if (navigator.vibrate) navigator.vibrate(200);
     }
 
-    // ---- Controles: press-and-hold ----
+    // ---- Controles: press-and-hold para mover, tap para bocina ----
+    // HONK no es un comando de movimiento: no fija heldCommand ni frena, para
+    // que se pueda tocar la bocina sin detener el carrito en marcha.
     function press(btn) {
       unlockAudio();               // primer gesto desbloquea el audio
       btn.classList.add('pressed');
-      if (btn.hasAttribute('data-stop')) { release(); return; }
+      if (btn.hasAttribute('data-honk')) { sendCommand('/honk'); return; }
       heldCommand = btn.getAttribute('data-cmd');
       sendCommand(heldCommand);
     }
-    function release() {
+    function release(btn) {
+      btn.classList.remove('pressed');
+      if (btn.hasAttribute('data-honk')) return;  // la bocina no afecta el movimiento
       heldCommand = null;
-      var pressed = document.querySelectorAll('.button.pressed');
-      for (var i = 0; i < pressed.length; i++) pressed[i].classList.remove('pressed');
       sendCommand('/stop');
     }
 
@@ -407,11 +438,11 @@ void handleRoot() {
     for (var i = 0; i < buttons.length; i++) {
       (function (btn) {
         btn.addEventListener('touchstart', function (e) { e.preventDefault(); press(btn); }, { passive: false });
-        btn.addEventListener('touchend',   function (e) { e.preventDefault(); release(); }, { passive: false });
-        btn.addEventListener('touchcancel',function (e) { e.preventDefault(); release(); }, { passive: false });
+        btn.addEventListener('touchend',   function (e) { e.preventDefault(); release(btn); }, { passive: false });
+        btn.addEventListener('touchcancel',function (e) { e.preventDefault(); release(btn); }, { passive: false });
         btn.addEventListener('mousedown',  function (e) { e.preventDefault(); press(btn); });
-        btn.addEventListener('mouseup',    function (e) { e.preventDefault(); release(); });
-        btn.addEventListener('mouseleave', function () { if (btn.classList.contains('pressed')) release(); });
+        btn.addEventListener('mouseup',    function (e) { e.preventDefault(); release(btn); });
+        btn.addEventListener('mouseleave', function () { if (btn.classList.contains('pressed')) release(btn); });
       })(buttons[i]);
     }
 
@@ -482,6 +513,15 @@ void handleRight() {
 void handleStop() {
   setCommand(CMD_STOP);
   server.send(200, "text/plain", "Stop");
+}
+
+// La bocina no toca el estado del movimiento: solo enciende el buzzer y
+// programa su apagado. No refresca el watchdog (no es un comando de motor).
+void handleHonk() {
+  ledcWriteTone(BUZZER_PIN, HONK_FREQ_HZ);
+  honkActive = true;
+  honkUntil = millis() + HONK_DURATION_MS;
+  server.send(200, "text/plain", "Honk");
 }
 
 void handleStatus() {
