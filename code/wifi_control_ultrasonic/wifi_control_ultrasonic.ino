@@ -212,111 +212,233 @@ void updateLed() {
 void handleRoot() {
   String html = R"rawliteral(
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
   <title>Control Carrito ESP32</title>
   <style>
+    :root {
+      --bg: #10131a;
+      --panel: #1b2030;
+      --btn: #2a3350;
+      --btn-active: #3a4a7a;
+      --stop: #b00020;
+      --stop-active: #d81b3f;
+      --text: #f2f4f8;
+      --muted: #9aa4bd;
+      --ok: #35c46b;
+      --alert: #ff3b4e;
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; }
     body {
-      font-family: Arial, sans-serif;
-      text-align: center;
-      background: #f2f2f2;
-      margin-top: 40px;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      min-height: 100%;
+      padding: calc(env(safe-area-inset-top) + 12px) 12px calc(env(safe-area-inset-bottom) + 16px);
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-touch-callout: none;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+      overflow: hidden;
     }
-    h1 { font-size: 28px; }
+    header { text-align: center; padding-top: 4px; }
+    h1 { font-size: 20px; font-weight: 600; margin: 0; letter-spacing: .3px; }
+    .sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+    .status {
+      width: 100%;
+      max-width: 420px;
+      background: var(--panel);
+      border-radius: 14px;
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      font-size: 18px;
+      border: 2px solid transparent;
+      transition: border-color .15s, background .15s, color .15s;
+    }
+    .status .label { color: var(--muted); font-size: 14px; }
+    .status .value { font-weight: 700; }
+    .status.free .value { color: var(--ok); }
+    .status.alert {
+      border-color: var(--alert);
+      background: #2a1620;
+      color: var(--alert);
+      animation: pulse .6s ease-in-out infinite alternate;
+    }
+    .status.alert .value, .status.alert .label { color: var(--alert); }
+    @keyframes pulse {
+      from { box-shadow: 0 0 0 0 rgba(255,59,78,0); }
+      to   { box-shadow: 0 0 0 6px rgba(255,59,78,.25); }
+    }
+
+    .pad {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      grid-template-rows: repeat(3, 1fr);
+      gap: 12px;
+      width: 100%;
+      max-width: 420px;
+      aspect-ratio: 1 / 1;
+      margin: 8px 0;
+    }
     .button {
-      width: 130px;
-      height: 70px;
-      font-size: 22px;
-      margin: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 34px;
       border: none;
-      border-radius: 12px;
-      background: #333;
-      color: white;
+      border-radius: 18px;
+      background: var(--btn);
+      color: var(--text);
+      min-height: 72px;
+      -webkit-user-select: none;
+      user-select: none;
+      touch-action: none;
+      transition: transform .05s, background .1s;
     }
-    .stop { background: #b00020; width: 160px; }
-    .row { margin: 10px; }
-    #dist { font-size: 20px; margin-top: 20px; }
-    .alert { color: #b00020; font-weight: bold; }
+    .button:active, .button.pressed { background: var(--btn-active); transform: scale(.96); }
+    .up    { grid-column: 2; grid-row: 1; }
+    .left  { grid-column: 1; grid-row: 2; }
+    .stop  { grid-column: 2; grid-row: 2; background: var(--stop); font-size: 22px; font-weight: 700; }
+    .stop:active, .stop.pressed { background: var(--stop-active); }
+    .right { grid-column: 3; grid-row: 2; }
+    .down  { grid-column: 2; grid-row: 3; }
+
+    footer { font-size: 11px; color: var(--muted); text-align: center; }
   </style>
 </head>
 <body>
-  <h1>Carrito ESP32</h1>
+  <header>
+    <h1>Carrito ESP32</h1>
+    <div class="sub">Mantene presionado para mover</div>
+  </header>
 
-  <div class="row">
-    <button class="button"
-      ontouchstart="hold(event,'/forward')" ontouchend="release(event)"
-      onmousedown="hold(event,'/forward')" onmouseup="release(event)"
-      onmouseleave="release(event)">
-      &uarr;
-    </button>
+  <div id="status" class="status">
+    <span class="label">Distancia:</span>
+    <span class="value" id="statusValue">-- cm</span>
   </div>
 
-  <div class="row">
-    <button class="button"
-      ontouchstart="hold(event,'/left')" ontouchend="release(event)"
-      onmousedown="hold(event,'/left')" onmouseup="release(event)"
-      onmouseleave="release(event)">
-      &larr;
-    </button>
-
-    <button class="button stop" onclick="release(event)">STOP</button>
-
-    <button class="button"
-      ontouchstart="hold(event,'/right')" ontouchend="release(event)"
-      onmousedown="hold(event,'/right')" onmouseup="release(event)"
-      onmouseleave="release(event)">
-      &rarr;
-    </button>
+  <div class="pad">
+    <button class="button up"    data-cmd="/forward">&uarr;</button>
+    <button class="button left"  data-cmd="/left">&larr;</button>
+    <button class="button stop"  data-stop>STOP</button>
+    <button class="button right" data-cmd="/right">&rarr;</button>
+    <button class="button down"  data-cmd="/backward">&darr;</button>
   </div>
 
-  <div class="row">
-    <button class="button"
-      ontouchstart="hold(event,'/backward')" ontouchend="release(event)"
-      onmousedown="hold(event,'/backward')" onmouseup="release(event)"
-      onmouseleave="release(event)">
-      &darr;
-    </button>
-  </div>
-
-  <div id="dist">Distancia: -- cm</div>
+  <footer>Conectado a la red del carrito - 192.168.4.1</footer>
 
   <script>
+    // Umbral de obstaculo. Debe coincidir con OBSTACLE_DISTANCE_CM en el sketch.
+    var OBSTACLE_CM = 15;
+    var ALERT_REPEAT_MS = 1000;  // re-alertar mientras siga bloqueado
+
     var heldCommand = null;
 
     function sendCommand(command) {
-      fetch(command).catch(error => console.log(error));
+      fetch(command).catch(function (e) { console.log(e); });
     }
 
-    // Presionar: fija el comando y arranca el heartbeat
-    function hold(e, command) {
-      e.preventDefault();          // evita disparar mouse+touch a la vez
-      heldCommand = command;
-      sendCommand(command);
+    // ---- Audio (Web Audio API) ----
+    // El navegador bloquea el audio hasta que el usuario interactua; la primera
+    // pulsacion de un boton lo desbloquea. iOS ademas exige resume() en ese gesto.
+    var audioCtx = null;
+    function unlockAudio() {
+      try {
+        if (!audioCtx) {
+          var AC = window.AudioContext || window.webkitAudioContext;
+          if (AC) audioCtx = new AC();
+        }
+        if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+      } catch (e) { /* sin audio */ }
+    }
+    function beep() {
+      if (!audioCtx) return;
+      try {
+        var osc = audioCtx.createOscillator();
+        var gain = audioCtx.createGain();
+        var t = audioCtx.currentTime;
+        osc.type = 'square';
+        osc.frequency.value = 880;
+        gain.gain.setValueAtTime(0.0001, t);
+        gain.gain.exponentialRampToValueAtTime(0.2, t + 0.01);
+        gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.15);
+        osc.connect(gain); gain.connect(audioCtx.destination);
+        osc.start(t); osc.stop(t + 0.16);
+      } catch (e) { /* sin audio */ }
     }
 
-    // Soltar: detiene y cancela el heartbeat
-    function release(e) {
-      if (e) e.preventDefault();
+    // ---- Alerta de obstaculo (beep + vibracion) ----
+    // navigator.vibrate solo funciona en Android; iOS lo ignora sin error.
+    var wasObstacle = false;
+    var lastAlertTime = 0;
+    function fireAlert() {
+      beep();
+      if (navigator.vibrate) navigator.vibrate(200);
+    }
+
+    // ---- Controles: press-and-hold ----
+    function press(btn) {
+      unlockAudio();               // primer gesto desbloquea el audio
+      btn.classList.add('pressed');
+      if (btn.hasAttribute('data-stop')) { release(); return; }
+      heldCommand = btn.getAttribute('data-cmd');
+      sendCommand(heldCommand);
+    }
+    function release() {
       heldCommand = null;
+      var pressed = document.querySelectorAll('.button.pressed');
+      for (var i = 0; i < pressed.length; i++) pressed[i].classList.remove('pressed');
       sendCommand('/stop');
     }
 
-    // Heartbeat: reenvia el comando activo para alimentar el watchdog del ESP32
-    setInterval(function () {
-      if (heldCommand) sendCommand(heldCommand);
-    }, 200);
+    var buttons = document.querySelectorAll('.button');
+    for (var i = 0; i < buttons.length; i++) {
+      (function (btn) {
+        btn.addEventListener('touchstart', function (e) { e.preventDefault(); press(btn); }, { passive: false });
+        btn.addEventListener('touchend',   function (e) { e.preventDefault(); release(); }, { passive: false });
+        btn.addEventListener('touchcancel',function (e) { e.preventDefault(); release(); }, { passive: false });
+        btn.addEventListener('mousedown',  function (e) { e.preventDefault(); press(btn); });
+        btn.addEventListener('mouseup',    function (e) { e.preventDefault(); release(); });
+        btn.addEventListener('mouseleave', function () { if (btn.classList.contains('pressed')) release(); });
+      })(buttons[i]);
+    }
 
-    // Sondeo de la distancia para monitoreo
+    // Heartbeat: reenvia el comando activo para alimentar el watchdog del ESP32
+    setInterval(function () { if (heldCommand) sendCommand(heldCommand); }, 200);
+
+    // Sondeo de distancia + motor de alertas
+    var statusEl = document.getElementById('status');
+    var valueEl = document.getElementById('statusValue');
     setInterval(function () {
       fetch('/status')
-        .then(r => r.text())
+        .then(function (r) { return r.text(); })
         .then(function (cm) {
-          var d = document.getElementById('dist');
           var n = parseInt(cm, 10);
-          d.textContent = 'Distancia: ' + (n >= 999 ? 'libre' : (n + ' cm'));
-          d.className = (n <= 15) ? 'alert' : '';
+          var free = !(n < 999);
+          valueEl.textContent = free ? 'libre' : (n + ' cm');
+          var isObstacle = !free && n <= OBSTACLE_CM;
+
+          statusEl.classList.toggle('alert', isObstacle);
+          statusEl.classList.toggle('free', free);
+
+          var now = Date.now();
+          if (isObstacle && (!wasObstacle || now - lastAlertTime >= ALERT_REPEAT_MS)) {
+            fireAlert();
+            lastAlertTime = now;
+          }
+          wasObstacle = isObstacle;
         })
         .catch(function () {});
     }, 300);
