@@ -11,8 +11,9 @@ WebServer server(80);
 
 // =======================
 // Pines de motores
-// Motor 1: IO10 e IO15
-// Motor 2: IO12 e IO14
+// Motor 1: IO12 e IO14
+// Motor 2: IO13 e IO15
+// (IO10 evitado: reservado para la flash SPI en el ESP32 original, causaba crash)
 // =======================
 const int M1_A = 12;
 const int M1_B = 14;
