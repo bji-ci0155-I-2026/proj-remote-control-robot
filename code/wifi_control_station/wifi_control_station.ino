@@ -2,59 +2,30 @@
 #include <WebServer.h>
 
 // =========================================================
-// RUNG 0 - Modo estacion (station)
-// =========================================================
-// A diferencia del sketch anterior (wifi_control_ultrasonic),
-// el carrito YA NO crea su propia red (softAP). Ahora se UNE
-// como cliente a una red 2.4 GHz existente: el hotspot de un
-// telefono o un router. En esa misma red viven tambien la
-// laptop (System 2) y el telefono con la camara (DroidCam).
+// Modo estacion (station): el carrito se UNE a una red 2.4 GHz
+// existente (router) como un cliente mas, junto con la laptop
+// (System 2) y el telefono-camara. Ya no crea su propia softAP.
+// Toma una IP fija para que la laptop siempre sepa a donde apuntar.
 //
-// El objetivo de esta rung es solo "probar la tuberia":
-//   - el carrito arranca,
-//   - se une a la red,
-//   - toma una IP FIJA (pineada) que la laptop siempre conoce,
-//   - la imprime por serial.
-//
-// Todo el System 1 (motores + freno ultrasonico + watchdog)
-// se conserva intacto: el MVP debe seguir funcionando aunque
-// la laptop este apagada. Los mismos endpoints HTTP
-// (/forward, /left, ...) sirven ahora para que la laptop
-// mande UN comando a la vez, sujeto siempre al freno local.
+// System 1 (motores + freno ultrasonico + watchdog) queda intacto:
+// el MVP funciona aunque la laptop este apagada. Los endpoints HTTP
+// (/forward, /left, ...) reciben un comando a la vez, siempre sujeto
+// al freno local.
 // =========================================================
 
-// =======================
-// Red WiFi a la que se UNE el ESP32 (hosteada por telefono/router)
-// >>> EDITAR estos valores con los de tu hotspot/router 2.4 GHz <<<
-// =======================
-const char* ssid = "POCO_X7_Pro";
-const char* password = "Esp32Carrito";
+// Red a la que se une el ESP32. >>> EDITAR con tu router 2.4 GHz <<<
+const char* ssid = "Lab-3-5";
+const char* password = "Cata2960!";
 
-// =======================
-// IP fija (pineada) para que la laptop siempre sepa a donde apuntar.
-//
-// IMPORTANTE: primero descubre la subred REAL de tu host. Muchos
-// telefonos NO usan 192.168.43.x:
-//   - POCO / Xiaomi (HyperOS/MIUI) suelen ser 192.168.201.x o similar
-//   - Samsung a veces 192.168.43.x, otras 192.168.x.x
-//   - Routers tipicos: 192.168.0.x o 192.168.1.x
-// Si pineas una IP en la subred equivocada, el ESP32 NO conecta.
-//
-// PASO 1: deja USE_STATIC_IP en false, flashea y mira el serial.
-//         Ahi apareceran la IP y el gateway REALES que da el host.
-// PASO 2: copia esa subred abajo (misma red, ultimo octeto libre y
-//         fuera del rango DHCP), pon USE_STATIC_IP en true y reflashea.
-// =======================
-// OJO: HyperOS/MIUI regenera la subred del hotspot cada vez que lo
-// apagas y prendes. Esta IP fija solo sirve mientras el hotspot NO se
-// reinicie. Si lo reinicias, vuelve a hacer la corrida de descubrimiento
-// (USE_STATIC_IP=false) y actualiza gateway/local_IP con la nueva subred.
+// IP fija del carrito. Debe estar en la subred REAL del host y fuera
+// del rango DHCP. Para descubrirla: pon USE_STATIC_IP=false, flashea,
+// y lee la IP/gateway del serial; luego copia esa subred aqui.
 const bool USE_STATIC_IP = true;
 
-IPAddress local_IP(10, 127, 72, 50);     // IP fija del carrito (subred del host actual)
-IPAddress gateway(10, 127, 72, 151);     // IP del host (hotspot POCO)
+IPAddress local_IP(192, 168, 0, 169);  // IP fija del carrito
+IPAddress gateway(192, 168, 0, 1);     // IP del router
 IPAddress subnet(255, 255, 255, 0);
-IPAddress primaryDNS(10, 127, 72, 151);  // el propio host como DNS en la LAN
+IPAddress primaryDNS(192, 168, 0, 1);
 
 const unsigned long WIFI_CONNECT_TIMEOUT_MS = 20000;  // reintenta hasta 20 s
 
@@ -89,6 +60,15 @@ const int ECHO_PIN = 34;   // entrada (34 es solo-entrada, ideal para un sensor)
 // Cambiar por el pin del LED integrado de tu placa si aplica.
 // =======================
 const int LED_PIN = 2;
+
+// =======================
+// Buzzer pasivo (bocina / HONK)
+// Modulo pasivo de 3 pines: S -> IO19, "-" -> GND, pin central sin conexion.
+// Al ser pasivo se genera el tono por PWM (ledcWriteTone).
+// =======================
+const int BUZZER_PIN = 19;
+const int HONK_FREQ_HZ = 440;          // tono tipo bocina
+const unsigned long HONK_DURATION_MS = 400;  // duracion de cada bocinazo
 
 // =======================
 // Velocidades
@@ -128,6 +108,9 @@ long lastDistanceCm = 999;          // ultima medicion (999 = libre)
 unsigned long lastMeasureTime = 0;  // control de cadencia de medicion
 unsigned long lastCommandTime = 0;  // ultimo comando recibido (para el watchdog)
 
+bool honkActive = false;            // hay un bocinazo sonando
+unsigned long honkUntil = 0;        // millis() en que se apaga el buzzer
+
 void setup() {
   Serial.begin(115200);
   delay(1000);
@@ -151,6 +134,10 @@ void setup() {
   pinMode(LED_PIN, OUTPUT);
   digitalWrite(LED_PIN, LOW);
 
+  // Buzzer pasivo (bocina). Se usa PWM como con los motores.
+  ledcAttach(BUZZER_PIN, HONK_FREQ_HZ, 8);
+  ledcWriteTone(BUZZER_PIN, 0);  // silencio
+
   // Unirse a la red del host (modo estacion) con IP fija
   connectWiFi();
 
@@ -161,6 +148,7 @@ void setup() {
   server.on("/left", handleLeft);
   server.on("/right", handleRight);
   server.on("/stop", handleStop);
+  server.on("/honk", handleHonk);       // suena la bocina
   server.on("/status", handleStatus);   // devuelve la distancia para la UI/laptop
 
   server.begin();
@@ -173,6 +161,18 @@ void loop() {
   updateDistance();     // mide cada MEASURE_INTERVAL_MS
   applyMovement();      // aplica el comando respetando el freno de emergencia
   updateLed();          // enciende el LED si hay obstaculo cercano
+  updateHonk();         // apaga la bocina cuando termina el bocinazo
+}
+
+// =======================
+// Bocina no bloqueante: handleHonk() la enciende, esto la apaga sola
+// al pasar HONK_DURATION_MS, sin frenar el manejo de comandos.
+// =======================
+void updateHonk() {
+  if (honkActive && millis() >= honkUntil) {
+    ledcWriteTone(BUZZER_PIN, 0);
+    honkActive = false;
+  }
 }
 
 // =======================
@@ -322,6 +322,8 @@ void handleRoot() {
       --btn-active: #3a4a7a;
       --stop: #b00020;
       --stop-active: #d81b3f;
+      --honk: #e8a400;
+      --honk-active: #ffbf1f;
       --text: #f2f4f8;
       --muted: #9aa4bd;
       --ok: #35c46b;
@@ -407,8 +409,8 @@ void handleRoot() {
     .button:active, .button.pressed { background: var(--btn-active); transform: scale(.96); }
     .up    { grid-column: 2; grid-row: 1; }
     .left  { grid-column: 1; grid-row: 2; }
-    .stop  { grid-column: 2; grid-row: 2; background: var(--stop); font-size: 22px; font-weight: 700; }
-    .stop:active, .stop.pressed { background: var(--stop-active); }
+    .honk  { grid-column: 2; grid-row: 2; background: var(--honk); color: #201500; font-size: 20px; font-weight: 800; letter-spacing: .5px; }
+    .honk:active, .honk.pressed { background: var(--honk-active); }
     .right { grid-column: 3; grid-row: 2; }
     .down  { grid-column: 2; grid-row: 3; }
 
@@ -429,7 +431,7 @@ void handleRoot() {
   <div class="pad">
     <button class="button up"    data-cmd="/forward">&uarr;</button>
     <button class="button left"  data-cmd="/left">&larr;</button>
-    <button class="button stop"  data-stop>STOP</button>
+    <button class="button honk"  data-honk>HONK</button>
     <button class="button right" data-cmd="/right">&rarr;</button>
     <button class="button down"  data-cmd="/backward">&darr;</button>
   </div>
@@ -485,18 +487,20 @@ void handleRoot() {
       if (navigator.vibrate) navigator.vibrate(200);
     }
 
-    // ---- Controles: press-and-hold ----
+    // ---- Controles: press-and-hold para mover, tap para bocina ----
+    // HONK no es un comando de movimiento: no fija heldCommand ni frena, para
+    // que se pueda tocar la bocina sin detener el carrito en marcha.
     function press(btn) {
       unlockAudio();               // primer gesto desbloquea el audio
       btn.classList.add('pressed');
-      if (btn.hasAttribute('data-stop')) { release(); return; }
+      if (btn.hasAttribute('data-honk')) { sendCommand('/honk'); return; }
       heldCommand = btn.getAttribute('data-cmd');
       sendCommand(heldCommand);
     }
-    function release() {
+    function release(btn) {
+      btn.classList.remove('pressed');
+      if (btn.hasAttribute('data-honk')) return;  // la bocina no afecta el movimiento
       heldCommand = null;
-      var pressed = document.querySelectorAll('.button.pressed');
-      for (var i = 0; i < pressed.length; i++) pressed[i].classList.remove('pressed');
       sendCommand('/stop');
     }
 
@@ -504,11 +508,11 @@ void handleRoot() {
     for (var i = 0; i < buttons.length; i++) {
       (function (btn) {
         btn.addEventListener('touchstart', function (e) { e.preventDefault(); press(btn); }, { passive: false });
-        btn.addEventListener('touchend',   function (e) { e.preventDefault(); release(); }, { passive: false });
-        btn.addEventListener('touchcancel',function (e) { e.preventDefault(); release(); }, { passive: false });
+        btn.addEventListener('touchend',   function (e) { e.preventDefault(); release(btn); }, { passive: false });
+        btn.addEventListener('touchcancel',function (e) { e.preventDefault(); release(btn); }, { passive: false });
         btn.addEventListener('mousedown',  function (e) { e.preventDefault(); press(btn); });
-        btn.addEventListener('mouseup',    function (e) { e.preventDefault(); release(); });
-        btn.addEventListener('mouseleave', function () { if (btn.classList.contains('pressed')) release(); });
+        btn.addEventListener('mouseup',    function (e) { e.preventDefault(); release(btn); });
+        btn.addEventListener('mouseleave', function () { if (btn.classList.contains('pressed')) release(btn); });
       })(buttons[i]);
     }
 
@@ -579,6 +583,15 @@ void handleRight() {
 void handleStop() {
   setCommand(CMD_STOP);
   server.send(200, "text/plain", "Stop");
+}
+
+// La bocina no toca el estado del movimiento: solo enciende el buzzer y
+// deja que updateHonk() lo apague. Asi se puede tocar en marcha.
+void handleHonk() {
+  ledcWriteTone(BUZZER_PIN, HONK_FREQ_HZ);
+  honkActive = true;
+  honkUntil = millis() + HONK_DURATION_MS;
+  server.send(200, "text/plain", "Honk");
 }
 
 void handleStatus() {
